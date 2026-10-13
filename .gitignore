@@ -1,0 +1,12 @@
+/storage/logs/*
+/storage/backups/*
+/storage/exports/*
+!/storage/logs/.gitkeep
+!/storage/backups/.gitkeep
+!/storage/exports/.gitkeep
+/config/database.local.php
+.env
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
