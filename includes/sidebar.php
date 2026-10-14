@@ -12,6 +12,7 @@ $adminMenu = [
     ['licenses/',           'key',          'Licences'],
     ['reports/shops.php',   'bar-chart',    'Shop Report'],
     ['reports/money.php',   'cash-coin',    'Money Report'],
+    ['smarty-settings.php', 'stars',        'Smarty AI'],
     ['backups/',            'shield-lock',  'Backups'],
 ];
 $clientMenu = [

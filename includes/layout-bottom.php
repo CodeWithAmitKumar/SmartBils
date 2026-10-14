@@ -1,4 +1,20 @@
 </main>
+
+<?php
+// Smarty mounts for shop users only, when enabled by Super Admin
+$__u = current_user();
+if ($__u && in_array($__u['user_type'] ?? '', ['shop_owner', 'staff'], true) && smarty_enabled()):
+?>
+  <link href="<?= url('assets/css/smarty.css') ?>?v=1" rel="stylesheet">
+  <script>
+    window.SB_URL = window.SB_URL || {};
+    window.SB_URL.smarty = '<?= e(url('ajax/smarty.php')) ?>';
+    window.SB_URL.csrf   = '<?= e(csrf_token()) ?>';
+    window.SB_URL.shopId = <?= (int)$__u['shop_id'] ?>;
+  </script>
+  <script src="<?= url('assets/js/smarty.js') ?>?v=1" defer></script>
+<?php endif; ?>
+
 <?php require __DIR__ . '/footer.php'; ?>
 <!-- DataTables (jQuery + Bootstrap 5 integration) -->
 <link  href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css" rel="stylesheet">

@@ -63,3 +63,4 @@ require_once __DIR__ . '/../includes/audit.php';
 require_once __DIR__ . '/../includes/image.php';
 require_once __DIR__ . '/../includes/settings.php';
 require_once __DIR__ . '/../includes/mail.php';
+require_once __DIR__ . '/../includes/smarty.php';
