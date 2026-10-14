@@ -29,7 +29,6 @@ $clientMenu = [
     ['expenses/',      'receipt',      'Expenses'],
     ['reports/',       'bar-chart',    'Reports'],
     ['staff/',         'people-fill',  'Staff'],
-    ['audit/',         'journal-text', 'Audit log'],
     ['settings/',      'gear',         'Settings'],
 ];
 $menu = $role === 'super_admin' ? $adminMenu : $clientMenu;
