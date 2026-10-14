@@ -17,6 +17,9 @@ $taxPct    = max(0, min(100, (float)($_POST['tax_percent'] ?? 0)));
 $amtPaid   = max(0, (float)($_POST['amount_paid'] ?? 0));
 $method    = in_array($_POST['pay_method'] ?? '', ['cash','upi','other'], true) ? $_POST['pay_method'] : 'cash';
 $payRef    = trim((string)($_POST['pay_reference'] ?? '')) ?: null;
+$dueDate   = trim((string)($_POST['due_date'] ?? '')) ?: null;
+$dueNote   = trim((string)($_POST['due_note'] ?? '')) ?: null;
+if ($dueDate && !DateTime::createFromFormat('Y-m-d', $dueDate)) $dueDate = null;
 $token     = (string)($_POST['txn_token'] ?? '');
 $itemsIn   = json_decode((string)($_POST['items_json'] ?? '[]'), true);
 
@@ -151,8 +154,11 @@ try {
              : ($amtPaid + 0.01 >= $grandTotal
                 ? ($method === 'upi' ? 'partial' : 'paid')     // UPI stays partial until verified
                 : 'partial');
-    db()->prepare('UPDATE sales SET status = :st WHERE id = :id AND shop_id = :sid')
-        ->execute([':st'=>$derived, ':id'=>$saleId, ':sid'=>$shopId]);
+    // Keep due_date only when there's a balance (partial/unpaid).
+    $saveDue  = in_array($derived, ['unpaid', 'partial'], true) ? $dueDate : null;
+    $saveNote = $saveDue ? $dueNote : null;
+    db()->prepare('UPDATE sales SET status = :st, due_date = :dd, due_note = :dn WHERE id = :id AND shop_id = :sid')
+        ->execute([':st'=>$derived, ':dd'=>$saveDue, ':dn'=>$saveNote, ':id'=>$saleId, ':sid'=>$shopId]);
 
     db()->commit();
     audit('sale.create', 'sale', $saleId, ['total'=>$grandTotal, 'paid'=>$amtPaid, 'status'=>$derived], $shopId);

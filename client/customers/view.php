@@ -14,13 +14,13 @@ if (!$cust) { http_response_code(404); exit('Customer not found.'); }
 
 $t = db()->prepare("
   SELECT
-    COALESCE((SELECT SUM(grand_total) FROM sales WHERE customer_id = :id AND status <> 'cancelled'), 0) AS billed,
+    COALESCE((SELECT SUM(grand_total) FROM sales WHERE customer_id = :id1 AND status <> 'cancelled'), 0) AS billed,
     COALESCE((SELECT SUM(pa.allocated_amount)
               FROM payment_allocations pa
               JOIN sales s ON s.id = pa.sale_id
               JOIN payments p ON p.id = pa.payment_id
-              WHERE s.customer_id = :id AND p.status = 'verified'), 0) AS paid");
-$t->execute([':id'=>$id]);
+              WHERE s.customer_id = :id2 AND p.status = 'verified'), 0) AS paid");
+$t->execute([':id1'=>$id, ':id2'=>$id]);
 $tot = $t->fetch();
 $due = (float)$tot['billed'] - (float)$tot['paid'];
 

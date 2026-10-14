@@ -153,7 +153,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!empty($pendingWelcome) && !empty($pendingWelcome['to']) && mail_configured()) {
                 $v = $pendingWelcome['vars'];
                 $html = mail_welcome_html($v['owner_name'], $v['shop_name'], $v['username'], $v['password'], $v['login_url']);
-                $subject = 'Welcome to ' . setting_get('mail_from_name', APP_NAME) . ' — your login details';
+                $subject = 'Welcome to ' . (mail_config_get()['from_name'] ?: APP_NAME) . ' — your login details';
                 $res = mail_send($pendingWelcome['to'], $subject, $html);
                 if ($res['ok']) {
                     flash('success', $msg . ' Welcome email sent to ' . $pendingWelcome['to'] . '.');

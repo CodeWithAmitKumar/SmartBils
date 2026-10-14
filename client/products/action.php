@@ -64,16 +64,23 @@ try {
 
         case 'delete':
             require_permission('product.manage');
-            // Block delete if any movement exists (preserve history).
-            $hasMoves = db()->prepare('SELECT 1 FROM stock_movements WHERE product_id = :id LIMIT 1');
-            $hasMoves->execute([':id'=>$productId]);
-            if ($hasMoves->fetchColumn()) {
-                throw new RuntimeException('This product has stock history and cannot be deleted. Mark it unavailable instead.');
+            // Block delete only when the product is on an invoice / purchase / return.
+            // Opening-stock or adjustment movements get removed by CASCADE — those are safe.
+            foreach ([
+                'sale_items'         => 'sold invoice',
+                'purchase_items'     => 'purchase record',
+                'sales_return_items' => 'return record',
+            ] as $tbl => $label) {
+                $q = db()->prepare("SELECT 1 FROM {$tbl} WHERE product_id = :id LIMIT 1");
+                $q->execute([':id' => $productId]);
+                if ($q->fetchColumn()) {
+                    throw new RuntimeException("This product is on at least one {$label} and cannot be deleted. Mark it unavailable instead.");
+                }
             }
             db()->prepare('DELETE FROM products WHERE id = :id AND shop_id = :sid')
-                ->execute([':id'=>$productId, ':sid'=>$shopId]);
-            audit('product.delete', 'product', $productId, ['name'=>$product['name']], $shopId);
-            flash('success', 'Product deleted.');
+                ->execute([':id' => $productId, ':sid' => $shopId]);
+            audit('product.delete', 'product', $productId, ['name' => $product['name']], $shopId);
+            flash('success', 'Product "' . $product['name'] . '" deleted.');
             redirect('client/products/');
 
         default:

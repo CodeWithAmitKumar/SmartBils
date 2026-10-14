@@ -77,6 +77,13 @@ require __DIR__ . '/../../includes/layout-top.php';
             <a class="btn btn-sm btn-outline-primary" href="<?= url('client/products/view.php?id=' . (int)$p['id']) ?>">View</a>
             <?php if (has_permission('product.manage')): ?>
               <a class="btn btn-sm btn-outline-secondary" href="<?= url('client/products/form.php?id=' . (int)$p['id']) ?>">Edit</a>
+              <form method="post" action="<?= url('client/products/action.php') ?>" class="d-inline">
+                <?= csrf_field() ?>
+                <input type="hidden" name="product_id" value="<?= (int)$p['id'] ?>">
+                <input type="hidden" name="op" value="delete">
+                <button class="btn btn-sm btn-outline-danger"
+                        data-confirm="Delete '<?= e($p['name']) ?>'? Allowed only if there's no stock history.">Delete</button>
+              </form>
             <?php endif; ?>
           </td>
         </tr>

@@ -18,6 +18,7 @@ $clientMenu = [
     ['dashboard.php',  'speedometer2', 'Dashboard'],
     ['billing/',       'cart-plus',    'New Bill'],
     ['dues/',          'cash-stack',   'Collect Due'],
+    ['reminders/',     'bell',         'Reminders'],
     ['products/',      'box-seam',     'Products'],
     ['categories/',    'tags',         'Categories'],
     ['customers/',     'people',       'Customers'],

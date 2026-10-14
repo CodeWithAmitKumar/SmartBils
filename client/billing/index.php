@@ -145,8 +145,45 @@ require __DIR__ . '/../../includes/layout-top.php';
             <span>Balance to collect</span>
             <strong id="dispBalance" class="text-danger"><?= money(0) ?></strong>
           </div>
-          <?php if ($cfg['upi_enabled'] && $cfg['upi_id']): ?>
-            <div class="small text-muted mt-2">UPI: <code><?= e($cfg['upi_id']) ?></code> — QR display is NOT proof of payment.</div>
+
+          <!-- Partial payment: expected date -->
+          <div id="dueBlock" class="mt-3 d-none">
+            <div class="alert alert-warning small mb-2 p-2">
+              <i class="bi bi-calendar-event"></i>
+              Customer is paying part now. When will they pay the rest?
+            </div>
+            <div class="row g-2">
+              <div class="col-6">
+                <label class="form-label small">Expected date</label>
+                <input class="form-control" type="date" name="due_date" id="dueDate"
+                       value="<?= e(date('Y-m-d', strtotime('+7 days'))) ?>">
+              </div>
+              <div class="col-6">
+                <label class="form-label small">Note</label>
+                <input class="form-control" name="due_note" placeholder="e.g. after salary">
+              </div>
+            </div>
+          </div>
+
+          <!-- UPI info + QR -->
+          <?php
+          $qrPath = db()->prepare('SELECT upi_qr_path FROM shop_settings WHERE shop_id = :sid');
+          $qrPath->execute([':sid'=>$shopId]);
+          $qrPath = $qrPath->fetchColumn();
+          $qrUrl  = image_url($qrPath ?: null);
+          ?>
+          <?php if ($cfg['upi_enabled'] && ($cfg['upi_id'] || $qrUrl)): ?>
+            <div id="upiBlock" class="mt-3 p-3 border rounded-3 d-none" style="background:#F8FAFC;">
+              <?php if ($qrUrl): ?>
+                <div class="text-center mb-2">
+                  <img src="<?= e($qrUrl) ?>" alt="UPI QR" style="max-width:170px; max-height:170px; border-radius:8px;">
+                </div>
+              <?php endif; ?>
+              <?php if ($cfg['upi_id']): ?>
+                <div class="text-center small">Pay to <strong><?= e($cfg['upi_id']) ?></strong></div>
+              <?php endif; ?>
+              <div class="small text-muted text-center mt-1">QR display is NOT proof of payment — verify UPI txn before marking as received.</div>
+            </div>
           <?php endif; ?>
         </div>
       </div>
@@ -165,6 +202,6 @@ require __DIR__ . '/../../includes/layout-top.php';
     customerByMobile: '<?= e(url('ajax/customer-by-mobile.php')) ?>',
   };
 </script>
-<script src="<?= url('assets/js/billing.js') ?>?v=4"></script>
+<script src="<?= url('assets/js/billing.js') ?>?v=5"></script>
 
 <?php require __DIR__ . '/../../includes/layout-bottom.php'; ?>

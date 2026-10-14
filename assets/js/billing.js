@@ -187,6 +187,13 @@
   const paid      = el('amountPaid');
   const btn       = el('btnConfirm');
   const hint      = el('confirmHint');
+  const dueBlock  = el('dueBlock');
+  const upiBlock  = el('upiBlock');
+  const payMethod = document.querySelector('select[name="pay_method"]');
+
+  const toggleUpi = () => { if (upiBlock) upiBlock.classList.toggle('d-none', (payMethod?.value || '') !== 'upi'); };
+  payMethod?.addEventListener('change', toggleUpi);
+  toggleUpi();
 
   function refreshConfirm() {
     const okMobile = (fMobile.value || '').length >= 6;
@@ -219,6 +226,9 @@
     el('dispTax').textContent       = inr(tax);
     el('dispTotal').textContent     = inr(total);
     el('dispBalance').textContent   = inr(bal);
+
+    // Show due-date block only when there's a balance AND the cart has items
+    if (dueBlock) dueBlock.classList.toggle('d-none', !(cart.length > 0 && bal > 0.01));
 
     el('fItemsJson').value = JSON.stringify(cart.map(it => ({
       product_id: +it.id, qty: it.qty, unit_price: it.price, discount: it.disc,

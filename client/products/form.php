@@ -140,9 +140,40 @@ require __DIR__ . '/../../includes/layout-top.php';
           <?php endforeach; ?>
         </select>
       </div>
-      <div class="col-md-2">
-        <label class="form-label">Unit</label>
-        <input class="form-control" name="unit" value="<?= $v('unit', 'pcs') ?>">
+      <div class="col-md-4">
+        <label class="form-label">Unit <span class="text-muted small">· ଏକକ</span></label>
+        <?php
+          // key => [english, odia]
+          $units = [
+            'pcs'    => ['Piece',       'ଖଣ୍ଡ'],
+            'dozen'  => ['Dozen',       'ଡଜନ'],
+            'pair'   => ['Pair',        'ଯୋଡ଼ି'],
+            'set'    => ['Set',         'ସେଟ'],
+            'kg'     => ['Kilogram',    'କିଲୋଗ୍ରାମ'],
+            'g'      => ['Gram',        'ଗ୍ରାମ'],
+            'mg'     => ['Milligram',   'ମିଲିଗ୍ରାମ'],
+            'L'      => ['Litre',       'ଲିଟର'],
+            'ml'     => ['Millilitre',  'ମିଲିଲିଟର'],
+            'm'      => ['Metre',       'ମିଟର'],
+            'cm'     => ['Centimetre',  'ସେଣ୍ଟିମିଟର'],
+            'ft'     => ['Foot',        'ଫୁଟ'],
+            'box'    => ['Box',         'ବାକ୍ସ'],
+            'pkt'    => ['Packet',      'ପ୍ୟାକେଟ'],
+            'bag'    => ['Bag',         'ବ୍ୟାଗ'],
+            'bottle' => ['Bottle',      'ବୋତଲ'],
+          ];
+          $curUnit = $_POST['unit'] ?? ($product['unit'] ?? 'pcs');
+        ?>
+        <select class="form-select" name="unit" id="unitSelect" required>
+          <?php foreach ($units as $code => [$en, $or]): ?>
+            <option value="<?= e($code) ?>" <?= $curUnit === $code ? 'selected' : '' ?>>
+              <?= e($code) ?> — <?= e($en) ?> · <?= e($or) ?>
+            </option>
+          <?php endforeach; ?>
+          <?php if ($curUnit && !isset($units[$curUnit])): ?>
+            <option value="<?= e($curUnit) ?>" selected><?= e($curUnit) ?> (custom)</option>
+          <?php endif; ?>
+        </select>
       </div>
       <div class="col-md-3">
         <label class="form-label">Purchase cost (<?= APP_CURRENCY_SYMBOL ?>)</label>
@@ -195,5 +226,23 @@ require __DIR__ . '/../../includes/layout-top.php';
     <a href="<?= url($edit ? 'client/products/view.php?id=' . $id : 'client/products/') ?>" class="btn btn-outline-secondary">Cancel</a>
   </div>
 </form>
+
+<link  href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+<script>
+  new TomSelect('#unitSelect', {
+    maxOptions: 50,
+    searchField: ['text'],
+    placeholder: 'Pick a unit…',
+    dropdownParent: 'body',
+  });
+</script>
+<style>
+  .ts-wrapper .ts-control { min-height: 44px; padding: 6px 10px; border-radius: 10px; border-color: var(--sb-border); }
+  .ts-wrapper.focus .ts-control { border-color: var(--sb-primary); box-shadow: var(--sb-shadow-ring); }
+  .ts-dropdown { border-radius: 10px; box-shadow: var(--sb-shadow); max-height: 320px; }
+  .ts-dropdown .option { padding: 10px 14px; font-size: 14.5px; }
+  .ts-dropdown .active { background: var(--sb-primary-50); color: var(--sb-primary-700); }
+</style>
 
 <?php require __DIR__ . '/../../includes/layout-bottom.php'; ?>

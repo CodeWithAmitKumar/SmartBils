@@ -5,17 +5,50 @@ require_permission('return.manage');
 
 $shopId = current_shop_id();
 
-$invSearch = trim((string)($_GET['inv'] ?? ''));
+// Unified search — accepts invoice no/id OR customer mobile OR customer name
+$q    = trim((string)($_GET['q']   ?? ''));
+$inv  = trim((string)($_GET['inv'] ?? ''));   // chosen invoice from the match list
 $sale = null;
+$matchedInvoices = [];       // list for picker when searching by customer
+$matchedCustomer = null;
 
-if ($invSearch !== '') {
+/** Load one invoice for the item-entry form */
+$loadSale = function (string $invoiceOrId) use ($shopId) {
     $s = db()->prepare('
       SELECT s.*, c.name AS cust_name, c.mobile AS cust_mobile
       FROM sales s LEFT JOIN customers c ON c.id = s.customer_id
       WHERE s.shop_id = :sid AND (s.invoice_no = :inv OR s.id = :id)
       LIMIT 1');
-    $s->execute([':sid' => $shopId, ':inv' => $invSearch, ':id' => (int)$invSearch]);
-    $sale = $s->fetch() ?: null;
+    $s->execute([':sid' => $shopId, ':inv' => $invoiceOrId, ':id' => (int)$invoiceOrId]);
+    return $s->fetch() ?: null;
+};
+
+if ($inv !== '') {
+    $sale = $loadSale($inv);
+} elseif ($q !== '') {
+    // 1) direct invoice match
+    $sale = $loadSale($q);
+    if (!$sale) {
+        // 2) match customer by mobile exact or name LIKE
+        $like = "%{$q}%";
+        $cq = db()->prepare('
+          SELECT id, name, mobile
+          FROM customers
+          WHERE shop_id = :sid AND (mobile = :m OR name LIKE :n)
+          ORDER BY (mobile = :m2) DESC, name LIMIT 1');
+        $cq->execute([':sid' => $shopId, ':m' => $q, ':m2' => $q, ':n' => $like]);
+        $matchedCustomer = $cq->fetch() ?: null;
+
+        if ($matchedCustomer) {
+            $iq = db()->prepare("
+              SELECT id, invoice_no, sale_date, grand_total, status
+              FROM sales
+              WHERE shop_id = :sid AND customer_id = :cid AND status <> 'cancelled'
+              ORDER BY id DESC LIMIT 50");
+            $iq->execute([':sid' => $shopId, ':cid' => (int)$matchedCustomer['id']]);
+            $matchedInvoices = $iq->fetchAll();
+        }
+    }
 }
 
 $items = [];
@@ -58,17 +91,53 @@ require __DIR__ . '/../../includes/layout-top.php';
 <form method="get" class="card p-3 mb-3">
   <div class="row g-2 align-items-end">
     <div class="col-md-9">
-      <label class="form-label">Invoice number or ID</label>
-      <input class="form-control" name="inv" value="<?= e($invSearch) ?>" placeholder="e.g. INV-20260101-000123" required autofocus>
+      <label class="form-label">Invoice no · Customer mobile · Customer name</label>
+      <input class="form-control" name="q" value="<?= e($q) ?>"
+             placeholder="e.g. INV-20260101-000123, 9876543210, or Rahul" required autofocus>
     </div>
     <div class="col-md-3">
-      <button class="btn btn-primary w-100"><i class="bi bi-search me-1"></i>Load</button>
+      <button class="btn btn-primary w-100"><i class="bi bi-search me-1"></i>Search</button>
     </div>
   </div>
 </form>
 
-<?php if ($invSearch !== '' && !$sale): ?>
-  <div class="alert alert-warning">No invoice matched "<?= e($invSearch) ?>".</div>
+<?php if ($q !== '' && !$sale && !$matchedCustomer): ?>
+  <div class="alert alert-warning">No invoice or customer matched "<?= e($q) ?>".</div>
+<?php endif; ?>
+
+<?php if ($matchedCustomer && $matchedInvoices && !$sale): ?>
+  <div class="card mb-3">
+    <div class="card-header">
+      <strong><?= e($matchedCustomer['name']) ?></strong>
+      <?php if ($matchedCustomer['mobile']): ?><span class="text-muted">· <?= e($matchedCustomer['mobile']) ?></span><?php endif; ?>
+      <span class="text-muted small"> — <?= count($matchedInvoices) ?> invoice(s). Pick one.</span>
+    </div>
+    <div class="table-responsive">
+      <table class="table mb-0">
+        <thead><tr><th>Invoice</th><th>Date</th><th>Status</th><th class="sb-money">Total</th><th></th></tr></thead>
+        <tbody>
+        <?php foreach ($matchedInvoices as $r):
+            $cls = ['paid'=>'badge-paid','partial'=>'badge-partial','unpaid'=>'badge-unpaid','returned'=>'badge-pending'][$r['status']] ?? 'badge-pending';
+        ?>
+          <tr>
+            <td><code><?= e($r['invoice_no']) ?></code></td>
+            <td class="text-muted"><?= e(date('d M Y H:i', strtotime($r['sale_date']))) ?></td>
+            <td><span class="badge-pill <?= $cls ?>"><?= e(ucfirst($r['status'])) ?></span></td>
+            <td class="sb-money"><?= money($r['grand_total']) ?></td>
+            <td class="text-end">
+              <a class="btn btn-sm btn-primary" href="?inv=<?= (int)$r['id'] ?>">Select &amp; return</a>
+            </td>
+          </tr>
+        <?php endforeach; ?>
+        </tbody>
+      </table>
+    </div>
+  </div>
+<?php elseif ($matchedCustomer && !$matchedInvoices && !$sale): ?>
+  <div class="alert alert-info">
+    Found customer <strong><?= e($matchedCustomer['name']) ?></strong>, but no bills have been made for them yet (or all were cancelled) — nothing to return against.
+    <br><small class="text-muted">Tip: if the actual bill was made under a different name/mobile, search by that invoice number instead.</small>
+  </div>
 <?php endif; ?>
 
 <?php if ($sale): ?>

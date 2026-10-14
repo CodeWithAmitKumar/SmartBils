@@ -71,16 +71,16 @@ $recQ = db()->prepare("
                    FROM payment_allocations pa
                    JOIN payments p ON p.id = pa.payment_id
                    JOIN sales s2 ON s2.id = pa.sale_id
-                   WHERE s2.shop_id = :sid AND p.status = 'verified'), 0) AS recv
-  FROM sales s WHERE s.shop_id = :sid AND s.status <> 'cancelled'");
-$recQ->execute([':sid'=>$shopId]);
+                   WHERE s2.shop_id = :sid1 AND p.status = 'verified'), 0) AS recv
+  FROM sales s WHERE s.shop_id = :sid2 AND s.status <> 'cancelled'");
+$recQ->execute([':sid1'=>$shopId, ':sid2'=>$shopId]);
 $receivables = max(0, (float)$recQ->fetchColumn());
 
 // Payables
 $payablesQ = db()->prepare("
-  SELECT COALESCE(SUM(total), 0) - COALESCE((SELECT SUM(amount) FROM supplier_payments WHERE shop_id = :sid), 0) AS pay
-  FROM purchases WHERE shop_id = :sid AND status = 'received'");
-$payablesQ->execute([':sid'=>$shopId]);
+  SELECT COALESCE(SUM(total), 0) - COALESCE((SELECT SUM(amount) FROM supplier_payments WHERE shop_id = :sid1), 0) AS pay
+  FROM purchases WHERE shop_id = :sid2 AND status = 'received'");
+$payablesQ->execute([':sid1'=>$shopId, ':sid2'=>$shopId]);
 $payables = max(0, (float)$payablesQ->fetchColumn());
 
 if (($_GET['export'] ?? '') === 'csv') {

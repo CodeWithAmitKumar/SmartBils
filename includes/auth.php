@@ -86,13 +86,14 @@ function auth_attempt_shop(string $identifier, string $password): ?array {
 function auth_login_admin(array $u): void {
     session_regenerate_id(true);
     $_SESSION['user'] = [
-        'id'        => (int)$u['id'],
-        'name'      => $u['name'],
-        'username'  => $u['username'],
-        'email'     => $u['email'],
-        'user_type' => 'super_admin',
-        'shop_id'   => null,
-        'shop_name' => null,
+        'id'          => (int)$u['id'],
+        'name'        => $u['name'],
+        'username'    => $u['username'],
+        'email'       => $u['email'],
+        'user_type'   => 'super_admin',
+        'shop_id'     => null,
+        'shop_name'   => null,
+        'avatar_path' => $u['avatar_path'] ?? null,
     ];
     $_SESSION['login_time'] = time();
     clear_old();

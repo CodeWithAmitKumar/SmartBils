@@ -215,6 +215,12 @@ include __DIR__ . '/_share-bar.php';
         <td class="grand">BALANCE DUE</td>
         <td class="text-right grand" style="color:#B91C1C;"><?= money($balance) ?></td>
       </tr>
+      <?php if (!empty($sale['due_date'])): ?>
+        <tr>
+          <td class="muted">Promised by</td>
+          <td class="text-right"><strong><?= e(date('d M Y', strtotime($sale['due_date']))) ?></strong><?php if (!empty($sale['due_note'])): ?> <span class="muted">· <?= e($sale['due_note']) ?></span><?php endif; ?></td>
+        </tr>
+      <?php endif; ?>
     <?php endif; ?>
     <tr>
       <td colspan="2" class="text-right">
@@ -223,9 +229,18 @@ include __DIR__ . '/_share-bar.php';
     </tr>
   </table>
 
-  <?php if ($layout === 'a4' && !empty($sale['upi_id']) && $balance > 0): ?>
+  <?php if ($layout === 'a4' && $balance > 0 && (!empty($sale['upi_id']) || !empty($sale['upi_qr_path']))): ?>
     <div class="divider"></div>
-    <div class="muted">Pay via UPI: <strong><?= e($sale['upi_id']) ?></strong></div>
+    <div style="display:flex; gap:16px; align-items:center;">
+      <?php $qrUrl = image_url($sale['upi_qr_path'] ?? null); if ($qrUrl): ?>
+        <img src="<?= e($qrUrl) ?>" alt="UPI QR" style="width:140px; height:140px; object-fit:contain; border:1px solid #E5E7EB; border-radius:8px; padding:4px;">
+      <?php endif; ?>
+      <div>
+        <div style="font-weight:600; margin-bottom:4px;">Pay the balance via UPI</div>
+        <?php if (!empty($sale['upi_id'])): ?><div class="muted">UPI ID: <strong><?= e($sale['upi_id']) ?></strong></div><?php endif; ?>
+        <div class="muted small" style="margin-top:6px;">Please share the UPI reference once you've paid so we can verify.</div>
+      </div>
+    </div>
   <?php endif; ?>
 
   <?php if ($sale['receipt_footer']): ?>

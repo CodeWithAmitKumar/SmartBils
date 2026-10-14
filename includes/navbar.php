@@ -1,12 +1,16 @@
 <?php
 $u = current_user();
 $initials = $u ? mb_strtoupper(mb_substr($u['name'] ?? '?', 0, 1)) : '?';
-// Shop users: try to use shop logo for the avatar.
 $avatarUrl = null;
-if ($u && !empty($u['shop_id'])) {
-    $r = db()->prepare('SELECT logo_path FROM shops WHERE id = :id');
-    $r->execute([':id' => (int)$u['shop_id']]);
-    $avatarUrl = image_url($r->fetchColumn() ?: null);
+if ($u) {
+    if (($u['user_type'] ?? '') === 'super_admin') {
+        // Admin: avatar from session (populated at login or when profile is saved)
+        $avatarUrl = image_url($u['avatar_path'] ?? null);
+    } elseif (!empty($u['shop_id'])) {
+        $r = db()->prepare('SELECT logo_path FROM shops WHERE id = :id');
+        $r->execute([':id' => (int)$u['shop_id']]);
+        $avatarUrl = image_url($r->fetchColumn() ?: null);
+    }
 }
 ?>
 <nav class="sb-navbar">
